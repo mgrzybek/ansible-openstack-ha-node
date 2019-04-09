@@ -1,29 +1,5 @@
 ---
 
-#- name: APT-based pre-requisites
-#  when: ansible_os_family | lower == 'debian'
-#  block:
-#  - name: Installation de la cle de depot
-#    shell: curl {{ ansible_si1a_openstack_ha_node_repo_key_url }} | apt-key add -
-
-#  - name: Create apt repo
-#    get_url: url={{ ansible_si1a_openstack_ha_node_repo_apt_url }} dest=/etc/apt/sources.list.d/ansible_si1a_openstack_cluster_node.list
-
-#- name: RPM-based pre-requisites
-#  when: ansible_os_family | lower == 'redhat'
-#  block:
-#    - name: Create yum repo
-#      yum_repository:
-#        name: openstack_cluster_node
-#        description: openstack_cluster_node repo
-#        baseurl: "{{ openstack_ha_node_repo_rpm_url }}"
-#        gpgkey: "{{ openstack_ha_node_repo_key }}"
-#
-#    - name: Desactivation du depot QEMU-EV
-#      file:
-#        path: /etc/yum.repos.d/CentOS-QEMU-EV.repo
-#        state: absent
-
 - set_fact:
     use_firewalld: false
     configure_consul: false

@@ -4,8 +4,8 @@
   command: firewall-cmd --reload
 
 - name: restart cloud-info-clone
-  command: "{{ openstack_cluster_pacemaker_command }} resource cleanup cloud-info"
+  command: "{{ openstack_ha_pacemaker_command }} resource cleanup cloud-info"
 
 - name: update certificates
-  command: "{{ openstack_cluster_update_certificates }}"
+  command: "{{ openstack_ha_update_certificates }}"
   notify: restart cloud-info-clone

@@ -1,7 +1,6 @@
 ---
-# tasks file for ansible-si1a-openstack-cluster-node
 
-- fail: msg="openstack_ha_node_openrc_source and openstack_cluster_node_openrc_destination must be given"
+- fail: msg="openstack_ha_node_openrc_source and openstack_ha_node_openrc_destination must be given"
   when: item == ""
   run_once: true
   with_items:
@@ -21,12 +20,12 @@
 
 - import_tasks: openstack_ha_node_pre_install.yml
   tags:
-    - openstack_cluster_node-pre-install
+    - openstack-ha-node-pre-install
 
 - import_tasks: openstack_ha_node_install.yml
   tags:
-    - openstack_cluster_node-install
+    - openstack-ha-node-install
 
 - import_tasks: openstack_ha_node_post_install.yml
   tags:
-    - openstack_cluster_node-post-install
+    - openstack-ha-node-post-install

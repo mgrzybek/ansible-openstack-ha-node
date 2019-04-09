@@ -3,7 +3,7 @@
 - when: use_firewalld == true
   block:
     - name: Set firewalld rules (cluster)
-      with_items: "{{ openstack_cluster_firewalld_ports_cluster }}"
+      with_items: "{{ openstack_ha_firewalld_ports_cluster }}"
       notify: reload firewalld
       firewalld:
         port: "{{ item }}"
@@ -11,7 +11,7 @@
         state: enabled
 
     - name: Set firewalld rules (consul)
-      with_items: "{{ openstack_cluster_firewalld_ports_consul }}"
+      with_items: "{{ openstack_ha_firewalld_ports_consul }}"
       when: configure_consul | lower == 'true'
       notify: reload firewalld
       firewalld:
@@ -101,13 +101,13 @@
   when: ansible_os_family | lower == 'debian'
   block:
     - name: Disable stonith
-      command: crm_attribute --attr-name stonith-enabled --attr-value false
       when: configure_openstack_stonith | lower == 'false'
       run_once: true
+      command: crm_attribute --attr-name stonith-enabled --attr-value false
 
     - name: Creates crm script (directory)
       file:
-        path: "{{ openstack_ha_node_crm_scripts_root_path }}/openstack_cluster_node"
+        path: "{{ openstack_ha_node_crm_scripts_root_path }}/openstack_ha_node"
         state: directory
         mode: 0755
         owner: root
@@ -116,15 +116,15 @@
     - name: Creates crm script (file)
       template:
         src: script.yml.j2
-        dest: "{{ openstack_ha_node_crm_scripts_root_path }}/openstack_cluster_node/main.yml"
+        dest: "{{ openstack_ha_node_crm_scripts_root_path }}/openstack_ha_node/main.yml"
 
     - name: Create the resources
-      command: crm -w script run openstack_cluster_node
+      run_once: true
+      command: crm -w script run openstack_ha_node
       register: crm_script
       until: crm_script is success
       retries: 5
       delay: 30
-      run_once: true
 
     - when: configure_openstack_stonith | lower == 'true'
       block:
@@ -151,8 +151,8 @@
                 project_name="$OS_PROJECT_NAME"
 
         - name: Enable stonith
-          command: crm_attribute --attr-name stonith-enabled --attr-value true
           run_once: true
+          command: crm_attribute --attr-name stonith-enabled --attr-value true
 
 - name: Start cluster at boot
   service: name=pacemaker enabled=yes

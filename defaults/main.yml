@@ -1,7 +1,6 @@
 ---
 
 openstack_ha_node_package_state: present
-openstack_ha_node_http_proxy:
 
 openstack_ha_node_openrc_source:
 openstack_ha_node_openrc_destination:
@@ -18,8 +17,7 @@ openstack_ha_node_firewalld_ports_consul:
 openstack_ha_local_resource_agents: []
 openstack_ha_remote_resource_agents: []
 
-openstack_ha_http_proxy:
-openstack_ha_https_proxy:
+openstack_ha_node_http_proxy:
 
 openstack_ha_node_use_consul: true
 openstack_ha_node_use_openstack_stonith: true
