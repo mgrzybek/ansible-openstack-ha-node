@@ -1,0 +1,34 @@
+# {{ ansible_managed }}
+#
+---
+- version: 2.2
+  category: Monitoring
+  shortdesc: {% if configure_consul | lower == 'true' %}Consul and {% endif %}Openstack attributes.
+  longdesc: |
+    This script adds resources designed to populate nodes' attributes, such as
+    - openstack informations about the nodes (id, tenant…)
+{% if configure_consul | lower == 'true' %}
+    - consul data (domain, datacenter…).
+{% endif %}
+
+  actions:
+    - cib: |
+        primitive cloud-info openstack-info
+            params openrc="{{ openstack_ha_node_openrc_destination }}"
+            op monitor interval=10min timeout=2min
+            op start timeout=2min
+
+        clone c-cloud-info cloud-info
+            meta interleave=true
+
+{% if configure_consul | lower == 'true' %}
+        primitive consul-service systemd:consul
+            op monitor interval=1min
+
+        primitive consul-info consul-info
+            op monitor interval=1min
+
+        group g-consul consul-service consul-info
+        clone c-consul g-consul
+            meta interleave=true
+{% endif %}

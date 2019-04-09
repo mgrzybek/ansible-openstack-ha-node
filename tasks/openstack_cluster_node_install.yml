@@ -1,0 +1,103 @@
+---
+
+- name: Install openstack_cluster_node repo packages
+  package:
+    name: "{{ openstack_ha_node_distro_repo_packages }}"
+    state: "{{ openstack_ha_node_package_state }}"
+    update_cache: "{{ (ansible_pkg_mgr == 'apt') | ternary('yes', omit) }}"
+    cache_valid_time: "{{ (ansible_pkg_mgr == 'apt') | ternary(cache_timeout, omit) }}"
+  register: install_packages
+  until: install_packages is success
+  retries: 5
+  delay: 2
+  tags:
+    - install-apt
+    - install-yum
+    - install-zypper
+
+- name: Custom proxy for RPM repo
+  when: ansible_os_family | lower == 'redhat'
+  block:
+    - name: Remove CentOS-QEMU-EV repo
+      file:
+        path: /etc/yum.repos.d/CentOS-QEMU-EV.repo
+        state: absent
+
+    - name: Configure custom proxy settings for the new repos
+      when:
+        - openstack_ha_node_http_proxy != None
+        - openstack_ha_node_http_proxy | length > 0
+      block:
+        - name: Get the new repo files
+          shell: for p in $(rpm -qa | grep {{ ansible_distribution | lower }}-release) ; do rpm -ql $p | awk '/.repo/' ; done
+          register: repo_files
+
+        - name: Configure the proxy
+          with_items: "{{ repo_files.stdout_lines }}"
+          shell: for r in $(awk '/\[/' {{ item }} | perl -pe 's/\[|\]//g') ; do yum-config-manager --setopt=proxy={{ openstack_ha_node_http_proxy }} --save $r ; done
+
+- name: Install openstack_cluster_node packages
+  package:
+    name: "{{ openstack_ha_node_distro_packages }}"
+    state: "{{ openstack_ha_node_package_state }}"
+    update_cache: "{{ (ansible_pkg_mgr == 'apt') | ternary('yes', omit) }}"
+    cache_valid_time: "{{ (ansible_pkg_mgr == 'apt') | ternary(cache_timeout, omit) }}"
+  register: install_packages
+  until: install_packages is success
+  retries: 5
+  delay: 2
+  tags:
+    - install-apt
+    - install-yum
+    - install-zypper
+
+- name: Copy openrc file
+  notify: restart cloud-info-clone
+  copy:
+    src: "{{ openstack_ha_node_openrc_source }}"
+    dest: "{{ openstack_ha_node_openrc_destination }}"
+    mode: 0640
+
+- name: Add Openstack API Certificate
+  notify: update certificates
+  copy:
+    src: "{{ openstack_ha_node_ca_cert_source }}"
+    dest: "{{ openstack_ha_node_ca_cert_destination }}"
+    mode: 0640
+
+- name: Install local custom resource agents
+  with_items: "{{ openstack_cluster_local_resource_agents }}"
+  copy:
+    src: "{{ item.src }}"
+    dest: "{{ openstack_ha_node_crm_ra_root_path }}/{{ item.dest }}"
+    remote_src: "{{ item.remote_src | default('yes') }}"
+    mode: 0755
+    owner: root
+    group: root
+
+- name: Install remote custom resource agents (using proxy)
+  with_items: "{{ openstack_cluster_remote_resource_agents }}"
+  get_url:
+    url: "{{ item.url }}"
+    dest: "{{ openstack_ha_node_crm_ra_root_path }}/{{ item.dest }}"
+    mode: 0755
+    owner: root
+    group: root
+  environment:
+    http_proxy: "{{ openstack_cluster_http_proxy }}"
+    https_proxy: "{{ openstack_cluster_https_proxy }}"
+  when:
+    - openstack_cluster_http_proxy != None
+    - openstack_cluster_https_proxy != None
+
+- name: Install remote custom resource agents (no proxy)
+  with_items: "{{ openstack_cluster_remote_resource_agents }}"
+  get_url:
+    url: "{{ item.url }}"
+    dest: "{{ openstack_ha_node_crm_ra_root_path }}/{{ item.dest }}"
+    mode: 0755
+    owner: root
+    group: root
+  when:
+    - openstack_cluster_http_proxy == None
+    - openstack_cluster_https_proxy == None

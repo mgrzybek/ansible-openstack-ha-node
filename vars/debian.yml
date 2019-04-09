@@ -1,0 +1,15 @@
+---
+
+openstack_cluster_node_repo_apt_url: 
+openstack_cluster_node_repo_key_url: 
+
+openstack_cluster_node_distro_repo_packages: []
+
+openstack_cluster_node_distro_packages:
+    - jq
+    - python-openstackclient
+
+openstack_cluster_pacemaker_command: crm
+
+openstack_cluster_node_ca_cert_destination: /usr/local/share/ca-certificates/
+openstack_cluster_update_certificates: /usr/sbin/update-ca-certificates

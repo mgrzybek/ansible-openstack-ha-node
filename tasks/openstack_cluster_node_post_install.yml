@@ -1,0 +1,158 @@
+---
+
+- when: use_firewalld == true
+  block:
+    - name: Set firewalld rules (cluster)
+      with_items: "{{ openstack_cluster_firewalld_ports_cluster }}"
+      notify: reload firewalld
+      firewalld:
+        port: "{{ item }}"
+        permanent: true
+        state: enabled
+
+    - name: Set firewalld rules (consul)
+      with_items: "{{ openstack_cluster_firewalld_ports_consul }}"
+      when: configure_consul | lower == 'true'
+      notify: reload firewalld
+      firewalld:
+        port: "{{ item }}"
+        permanent: true
+        state: enabled
+
+- name: Check cluster health
+  command: crm_mon -s
+
+- name: Create resources (pcs)
+  when: ansible_os_family | lower == 'redhat'
+  run_once: true
+  block:
+    - name: Get configuration
+      command: pcs config
+      register: pcs_config
+
+    - name: Disable stonith
+      command: crm_attribute --attr-name stonith-enabled --attr-value false
+      when: pcs_config.stdout.find('stonith-enabled\w+false') < 0
+
+    - name: Get configuration
+      command: pcs config 
+      register: pcs_config
+
+    - name: Adds cloud-info resource
+      when: pcs_config.stdout.find('cloud-info') < 0
+      command: >
+        pcs resource create \
+            cloud-info openstack-info \
+            openrc="{{ openstack_ha_node_openrc_destination }}" \
+            op monitor interval=10min timeout=2min \
+            op start timeout=2min
+
+    - name: Get configuration
+      command: pcs config
+      register: pcs_config
+
+    - name: Clones cloud-info
+      when: pcs_config.stdout.find('cloud-info-clone') < 0
+      command: pcs resource clone cloud-info interleave=true
+
+    - when: openstack_ha_node_use_consul | lower == 'true'
+      block:
+        - name: Get configuration
+          command: pcs config
+          register: pcs_config
+
+        - name: Adds consul-service resource
+          when: pcs_config.stdout.find('consul-service') < 0
+          command: >
+            pcs resource create \
+                consul-service systemd:consul \
+                op monitor interval=1min \
+                clone interleave=true
+
+        - name: Get configuration
+          command: pcs config
+          register: pcs_config
+
+        - name: Adds consul-info resource
+          when: pcs_config.stdout.find('consul-info') < 0
+          command: >
+            pcs resource create \
+                consul-info consul-info \
+                op monitor interval=1min \
+                clone interleave=true
+
+        - name: Get configuration
+          command: pcs config
+          register: pcs_config
+
+        - name: Starting order for consul
+          when: pcs_config.stdout.find('start consul-service-clone then start consul-info-clone') < 0
+          command: pcs constraint order consul-service-clone then consul-info-clone
+
+        - name: Cleanup services if not running on the node
+          with_items:
+            - consul-service
+            - cloud-info
+          shell: >
+            crm_resource --locate --resource {{ item }} | grep -q $(crm_node -n) \
+                || pcs resource cleanup {{ item }} --node $(crm_node -n)
+
+- name: Create resources (crm)
+  when: ansible_os_family | lower == 'debian'
+  block:
+    - name: Disable stonith
+      command: crm_attribute --attr-name stonith-enabled --attr-value false
+      when: configure_openstack_stonith | lower == 'false'
+      run_once: true
+
+    - name: Creates crm script (directory)
+      file:
+        path: "{{ openstack_ha_node_crm_scripts_root_path }}/openstack_cluster_node"
+        state: directory
+        mode: 0755
+        owner: root
+        group: root
+
+    - name: Creates crm script (file)
+      template:
+        src: script.yml.j2
+        dest: "{{ openstack_ha_node_crm_scripts_root_path }}/openstack_cluster_node/main.yml"
+
+    - name: Create the resources
+      command: crm -w script run openstack_cluster_node
+      register: crm_script
+      until: crm_script is success
+      retries: 5
+      delay: 30
+      run_once: true
+
+    - when: configure_openstack_stonith | lower == 'true'
+      block:
+        - name: Get openstack_id crm_attribute
+          register: cluster_node_uuid
+          retries: 5
+          delay: 30
+          shell: >
+            attrd_updater --name=openstack_id --node=$(crm_node -n) \
+                | awk -F'"' '{print $(NF-1)}'
+
+        - name: Create the stonith resource
+          register: crm_script
+          until: crm_script is success
+          retries: 5
+          delay: 30
+          shell: >
+            source {{ openstack_ha_node_openrc_destination }} ; \
+            crm -w script run openstack_fencing \
+                uuid="{{ cluster_node_uuid.stdout }}" \
+                auth_url="$OS_AUTH_URL" \
+                login="$OS_USERNAME" \
+                password="$OS_PASSWORD" \
+                project_name="$OS_PROJECT_NAME"
+
+        - name: Enable stonith
+          command: crm_attribute --attr-name stonith-enabled --attr-value true
+          run_once: true
+
+- name: Start cluster at boot
+  service: name=pacemaker enabled=yes

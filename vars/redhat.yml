@@ -1,0 +1,17 @@
+---
+
+openstack_cluster_node_repo_rpm_url: 
+openstack_cluster_node_repo_key_url: 
+
+openstack_cluster_node_distro_repo_packages:
+    - centos-release-openstack-queens
+
+openstack_cluster_node_distro_packages:
+    - jq
+    - python-openstackclient
+    - python-shade
+
+openstack_cluster_pacemaker_command: pcs
+
+openstack_cluster_node_ca_cert_destination: /etc/pki/ca-trust/source/anchors
+openstack_cluster_update_certificates: /bin/update-ca-trust

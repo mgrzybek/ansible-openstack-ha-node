@@ -1,0 +1,32 @@
+---
+# tasks file for ansible-si1a-openstack-cluster-node
+
+- fail: msg="openstack_ha_node_openrc_source and openstack_cluster_node_openrc_destination must be given"
+  when: item == ""
+  run_once: true
+  with_items:
+    - "{{ openstack_ha_node_openrc_source }}"
+    - "{{ openstack_ha_node_openrc_destination }}"
+
+- name: Variables by OS
+  include_vars: "{{ item }}"
+  with_first_found:
+    - "{{ ansible_distribution | lower }}-{{ ansible_distribution_version | lower }}.yml"
+    - "{{ ansible_distribution | lower }}-{{ ansible_distribution_major_version | lower }}.yml"
+    - "{{ ansible_os_family | lower }}-{{ ansible_distribution_major_version | lower }}.yml"
+    - "{{ ansible_distribution | lower }}.yml"
+    - "{{ ansible_os_family | lower }}.yml"
+  tags:
+    - always
+
+- import_tasks: openstack_ha_node_pre_install.yml
+  tags:
+    - openstack_cluster_node-pre-install
+
+- import_tasks: openstack_ha_node_install.yml
+  tags:
+    - openstack_cluster_node-install
+
+- import_tasks: openstack_ha_node_post_install.yml
+  tags:
+    - openstack_cluster_node-post-install

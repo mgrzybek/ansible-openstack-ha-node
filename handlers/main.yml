@@ -1,0 +1,11 @@
+---
+
+- name: reload firewalld
+  command: firewall-cmd --reload
+
+- name: restart cloud-info-clone
+  command: "{{ openstack_cluster_pacemaker_command }} resource cleanup cloud-info"
+
+- name: update certificates
+  command: "{{ openstack_cluster_update_certificates }}"
+  notify: restart cloud-info-clone

@@ -1,0 +1,25 @@
+---
+
+openstack_ha_node_package_state: present
+openstack_ha_node_http_proxy:
+
+openstack_ha_node_openrc_source:
+openstack_ha_node_openrc_destination:
+
+openstack_ha_node_ca_cert_source:
+
+openstack_ha_node_crm_scripts_root_path: /usr/share/crmsh/scripts
+openstack_ha_node_crm_ra_root_path: /usr/lib/ocf/resource.d/heartbeat
+
+openstack_ha_node_firewalld_ports_cluster: []
+openstack_ha_node_firewalld_ports_consul:
+    - "8300-8302/tcp" # consul
+
+openstack_ha_local_resource_agents: []
+openstack_ha_remote_resource_agents: []
+
+openstack_ha_http_proxy:
+openstack_ha_https_proxy:
+
+openstack_ha_node_use_consul: true
+openstack_ha_node_use_openstack_stonith: true
