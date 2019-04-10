@@ -23,3 +23,9 @@ openstack_ha_node_no_proxy:
 
 openstack_ha_node_use_consul: true
 openstack_ha_node_use_openstack_stonith: true
+
+openstack_ha_node_openstack_credentials:
+    auth_url: "{{ lookup('env', 'OS_AUTH_URL') }}"
+    login: "{{ lookup('env', 'OS_USERNAME') }}"
+    password: "{{ lookup('env', 'OS_PASSWORD') }}"
+    project_name: "{{ lookup('env', 'OS_PROJECT_NAME') }}"

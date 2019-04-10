@@ -141,14 +141,13 @@
           until: crm_script is success
           retries: 5
           delay: 30
-          shell: >
-            source {{ openstack_ha_node_openrc_destination }} ; \
+          command: >
             crm -w script run openstack_fencing \
                 uuid="{{ cluster_node_uuid.stdout }}" \
-                auth_url="$OS_AUTH_URL" \
-                login="$OS_USERNAME" \
-                password="$OS_PASSWORD" \
-                project_name="$OS_PROJECT_NAME"
+                auth_url="{{ openstack_ha_node_openstack_credentials.auth_url }}" \
+                login="{{ openstack_ha_node_openstack_credentials.login }}" \
+                password="{{ openstack_ha_node_openstack_credentials.password }}" \
+                project_name="{{ openstack_ha_node_openstack_credentials.project_name }}"
 
         - name: Enable stonith
           run_once: true
