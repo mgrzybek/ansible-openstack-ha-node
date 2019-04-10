@@ -15,7 +15,7 @@
         use_firewalld: true
       when: firewalld_service.stdout.find('0') > -1
 
-- when: openstack_ha_node_use_consul | 'lower' == true
+- when: openstack_ha_node_use_consul | lower == 'true'
   block:
     - name: Check consul service
       shell: systemctl is-active consul 2>/dev/null || echo ko && exit 0
