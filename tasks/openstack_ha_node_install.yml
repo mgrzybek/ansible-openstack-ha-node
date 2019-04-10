@@ -78,7 +78,7 @@
 - name: Install remote custom resource agents (using proxy)
   when:
     - openstack_ha_node_http_proxy != None
-    - openstack_ha_https_proxy != None
+    - openstack_ha_node_https_proxy != None
   with_items: "{{ openstack_ha_node_remote_resource_agents }}"
   get_url:
     url: "{{ item.url }}"
@@ -94,7 +94,7 @@
 - name: Install remote custom resource agents (no proxy)
   when:
     - openstack_ha_node_http_proxy == None
-    - openstack_ha_https_proxy == None
+    - openstack_ha_node_https_proxy == None
   with_items: "{{ openstack_ha_node_remote_resource_agents }}"
   get_url:
     url: "{{ item.url }}"
