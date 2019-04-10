@@ -66,7 +66,7 @@
     mode: 0640
 
 - name: Install local custom resource agents
-  with_items: "{{ openstack_ha_local_resource_agents }}"
+  with_items: "{{ openstack_ha_node_local_resource_agents }}"
   copy:
     src: "{{ item.src }}"
     dest: "{{ openstack_ha_node_crm_ra_root_path }}/{{ item.dest }}"
