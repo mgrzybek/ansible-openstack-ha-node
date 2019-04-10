@@ -14,10 +14,12 @@ openstack_ha_node_firewalld_ports_cluster: []
 openstack_ha_node_firewalld_ports_consul:
     - "8300-8302/tcp" # consul
 
-openstack_ha_local_resource_agents: []
-openstack_ha_remote_resource_agents: []
+openstack_ha_node_local_resource_agents: []
+openstack_ha_node_remote_resource_agents: []
 
 openstack_ha_node_http_proxy:
+openstack_ha_node_https_proxy:
+openstack_ha_node_no_proxy:
 
 openstack_ha_node_use_consul: true
 openstack_ha_node_use_openstack_stonith: true
