@@ -147,7 +147,7 @@
                 auth_url="{{ openstack_ha_node_openstack_credentials.auth_url }}" \
                 login="{{ openstack_ha_node_openstack_credentials.login }}" \
                 password="{{ openstack_ha_node_openstack_credentials.password }}" \
-                project_name="{{ openstack_ha_node_openstack_credentials.project_name }}"
+                project_name="\"{{ openstack_ha_node_openstack_credentials.project_name }}\""
 
         - name: Enable stonith
           run_once: true
