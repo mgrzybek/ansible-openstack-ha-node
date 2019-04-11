@@ -128,14 +128,6 @@
 
     - when: configure_openstack_stonith | lower == 'true'
       block:
-        - name: Get openstack_id crm_attribute
-          register: cluster_node_uuid
-          retries: 5
-          delay: 30
-          shell: >
-            attrd_updater --name=openstack_id --node={{ crm_node }} \
-                | awk -F'"' '{print $(NF-1)}'
-
         - name: Create the stonith resource
           register: crm_script
           until: crm_script is success
@@ -143,12 +135,12 @@
           delay: 30
           command: >
             crm -w script run openstack_fencing \
-                uuid="{{ cluster_node_uuid.stdout }}" \
-                node="{{ crm_node }}"
+                uuid="{{ cluster_node_openstack_id }}" \
+                node="{{ cluster_node_crm_node }}"
                 auth_url="{{ openstack_ha_node_openstack_credentials.auth_url }}" \
                 login="{{ openstack_ha_node_openstack_credentials.login }}" \
                 password="{{ openstack_ha_node_openstack_credentials.password }}" \
-                project_name="\"{{ openstack_ha_node_openstack_credentials.project_name }}\""
+                project_name="'{{ openstack_ha_node_openstack_credentials.project_name }}'"
 
         - name: Enable stonith
           run_once: true
