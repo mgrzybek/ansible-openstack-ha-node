@@ -46,7 +46,7 @@
     - command: crm_node -n
       register: result_crm_node
 
-   - set_fact:
+    - set_fact:
         cluster_node_crm_node: "{{ result_crm_node.stdout }}"
 
     - name: Get openstack_id crm_attribute
