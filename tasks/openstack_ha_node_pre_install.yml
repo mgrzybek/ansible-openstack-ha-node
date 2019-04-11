@@ -43,5 +43,13 @@
       set_fact:
         configure_openstack_stonith: true
 
+- name: Get crm_node value
+  block:
+    - command: crm_node -n
+      register: result_crm_node
+
+    - set_fact:
+        crm_node: "{{ result_crm_node.stdout }}"
+
 - name: Creates /etc/pacemaker
   file: path=/etc/pacemaker state=directory

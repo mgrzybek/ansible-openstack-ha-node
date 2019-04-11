@@ -94,8 +94,8 @@
             - consul-service
             - cloud-info
           shell: >
-            crm_resource --locate --resource {{ item }} | grep -q $(crm_node -n) \
-                || pcs resource cleanup {{ item }} --node $(crm_node -n)
+            crm_resource --locate --resource {{ item }} | grep -q {{ crm_node }} \
+                || pcs resource cleanup {{ item }} --node {{ crm_node }}
 
 - name: Create resources (crm)
   when: ansible_os_family | lower == 'debian'
@@ -133,7 +133,7 @@
           retries: 5
           delay: 30
           shell: >
-            attrd_updater --name=openstack_id --node=$(crm_node -n) \
+            attrd_updater --name=openstack_id --node={{ crm_node }} \
                 | awk -F'"' '{print $(NF-1)}'
 
         - name: Create the stonith resource
@@ -144,6 +144,7 @@
           command: >
             crm -w script run openstack_fencing \
                 uuid="{{ cluster_node_uuid.stdout }}" \
+                node="{{ crm_node }}"
                 auth_url="{{ openstack_ha_node_openstack_credentials.auth_url }}" \
                 login="{{ openstack_ha_node_openstack_credentials.login }}" \
                 password="{{ openstack_ha_node_openstack_credentials.password }}" \
