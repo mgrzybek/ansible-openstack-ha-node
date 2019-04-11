@@ -60,8 +60,8 @@
     - set_fact:
         cluster_node_openstack_id: "{{ cluster_node_uuid.stdout }}"
 
-   - when: cluster_node_openstack_id | length != 36
-     fail: msg="Bad cluster_node_openstack_id {{ cluster_node_openstack_id }}"
+    - when: cluster_node_openstack_id | length != 36
+      fail: msg="Bad cluster_node_openstack_id {{ cluster_node_openstack_id }}"
 
 - name: Creates /etc/pacemaker
   file: path=/etc/pacemaker state=directory
