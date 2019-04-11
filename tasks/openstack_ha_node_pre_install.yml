@@ -57,7 +57,7 @@
         attrd_updater --name=openstack_id --node={{ cluster_node_crm_node }} \
             | awk -F'"' '{print $(NF-1)}'
 
-   - set_fact:
+    - set_fact:
         cluster_node_openstack_id: "{{ cluster_node_uuid.stdout }}"
 
    - when: cluster_node_openstack_id | length != 36
