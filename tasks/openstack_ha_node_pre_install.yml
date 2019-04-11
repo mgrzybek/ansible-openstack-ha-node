@@ -53,9 +53,8 @@
       register: cluster_node_uuid
       retries: 5
       delay: 30
-      shell: >
-        attrd_updater --name=openstack_id --node={{ cluster_node_crm_node }} \
-            | awk -F'"' '{print $(NF-1)}'
+      command: >
+        openstack server show -f value -c id {{ inventory_hostname }}
 
     - set_fact:
         cluster_node_openstack_id: "{{ cluster_node_uuid.stdout }}"
