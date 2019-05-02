@@ -1,7 +1,7 @@
 ---
 
-openstack_ha_node_repo_rpm_url: 
-openstack_ha_node_repo_key_url: 
+openstack_ha_node_repo_rpm_url:
+openstack_ha_node_repo_key_url:
 
 openstack_ha_node_distro_repo_packages:
     - centos-release-openstack-queens
