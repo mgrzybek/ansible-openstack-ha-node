@@ -29,12 +29,20 @@
         - openstack_ha_node_http_proxy | length > 0
       block:
         - name: Get the new repo files
-          shell: for p in $(rpm -qa | grep {{ ansible_distribution | lower }}-release) ; do rpm -ql $p | awk '/.repo/' ; done
           register: repo_files
+          shell: >
+             for p in $(rpm -qa | grep {{ ansible_distribution | lower }}-release) ; do \
+                 rpm -ql $p | awk '/.repo/' ; \
+             done
 
         - name: Configure the proxy
           with_items: "{{ repo_files.stdout_lines }}"
-          shell: for r in $(awk '/\[/' {{ item }} | perl -pe 's/\[|\]//g') ; do yum-config-manager --setopt=proxy={{ openstack_ha_node_http_proxy }} --save $r ; done
+          shell: >
+             for r in $(awk '/\[/' {{ item }} | perl -pe 's/\[|\]//g') ; do \
+                 yum-config-manager \
+                 --setopt=proxy={{ openstack_ha_node_http_proxy }} \
+                 --save $r ; \
+             done
 
 - name: Install openstack_ha_node packages
   package:
