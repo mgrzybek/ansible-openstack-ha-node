@@ -1,7 +1,7 @@
 ---
 
 - fail: msg="openstack_ha_node_openrc_source and openstack_ha_node_openrc_destination must be given"
-  when: item == ""
+  when: item | length == 0
   run_once: true
   with_items:
     - "{{ openstack_ha_node_openrc_source }}"
