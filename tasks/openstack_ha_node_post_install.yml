@@ -1,6 +1,7 @@
 ---
 
-- when: use_firewalld == true
+- name: Configure firewalld rules
+  when: use_firewalld | lower == 'true'
   block:
     - name: Set firewalld rules (cluster)
       with_items: "{{ openstack_ha_firewalld_ports_cluster }}"
