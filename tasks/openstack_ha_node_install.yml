@@ -1,6 +1,6 @@
 ---
 
-- name: ha-node Install | | Install openstack_ha_node repo packages
+- name: ha-node Install | Install openstack_ha_node repo packages
   package:
     name: "{{ openstack_ha_node_distro_repo_packages }}"
     state: "{{ openstack_ha_node_package_state }}"
@@ -15,27 +15,27 @@
     - install-yum
     - install-zypper
 
-- name: ha-node Install | | Custom proxy for RPM repo
+- name: ha-node Install | Custom proxy for RPM repo
   when: ansible_os_family | lower == 'redhat'
   block:
-    - name: ha-node Install | | Remove CentOS-QEMU-EV repo
+    - name: ha-node Install | Remove CentOS-QEMU-EV repo
       file:
         path: /etc/yum.repos.d/CentOS-QEMU-EV.repo
         state: absent
 
-    - name: ha-node Install | | Configure custom proxy settings for the new repos
+    - name: ha-node Install | Configure custom proxy settings for the new repos
       when:
         - openstack_ha_node_http_proxy != None
         - openstack_ha_node_http_proxy | length > 0
       block:
-        - name: ha-node Install | | Get the new repo files
+        - name: ha-node Install | Get the new repo files
           register: repo_files
           shell: >
              for p in $(rpm -qa | grep {{ ansible_distribution | lower }}-release) ; do \
                  rpm -ql $p | awk '/.repo/' ; \
              done
 
-        - name: ha-node Install | | Configure the proxy
+        - name: ha-node Install | Configure the proxy
           with_items: "{{ repo_files.stdout_lines }}"
           shell: >
              for r in $(awk '/\[/' {{ item }} | perl -pe 's/\[|\]//g') ; do \
@@ -44,7 +44,7 @@
                  --save $r ; \
              done
 
-- name: ha-node Install | | Install openstack_ha_node packages
+- name: ha-node Install | Install openstack_ha_node packages
   package:
     name: "{{ openstack_ha_node_distro_packages }}"
     state: "{{ openstack_ha_node_package_state }}"
@@ -59,21 +59,21 @@
     - install-yum
     - install-zypper
 
-- name: ha-node Install | | Copy openrc file
+- name: ha-node Install | Copy openrc file
   notify: restart cloud-info-clone
   copy:
     src: "{{ openstack_ha_node_openrc_source }}"
     dest: "{{ openstack_ha_node_openrc_destination }}"
     mode: 0640
 
-- name: ha-node Install | | Add Openstack API Certificate
+- name: ha-node Install | Add Openstack API Certificate
   notify: update certificates
   copy:
     src: "{{ openstack_ha_node_ca_cert_source }}"
     dest: "{{ openstack_ha_node_ca_cert_destination }}"
     mode: 0640
 
-- name: ha-node Install | | Install local custom resource agents
+- name: ha-node Install | Install local custom resource agents
   with_items: "{{ openstack_ha_node_local_resource_agents }}"
   copy:
     src: "{{ item.src }}"
@@ -83,7 +83,7 @@
     owner: root
     group: root
 
-- name: ha-node Install | | Install remote custom resource agents (using proxy)
+- name: ha-node Install | Install remote custom resource agents (using proxy)
   when:
     - openstack_ha_node_http_proxy != None
     - openstack_ha_node_https_proxy != None
@@ -99,7 +99,7 @@
     https_proxy: "{{ openstack_ha_node_https_proxy }}"
     no_proxy: "{{ openstack_ha_node_no_proxy }}"
 
-- name: ha-node Install | | Install remote custom resource agents (no proxy)
+- name: ha-node Install | Install remote custom resource agents (no proxy)
   when:
     - openstack_ha_node_http_proxy == None
     - openstack_ha_node_https_proxy == None
