@@ -1,9 +1,9 @@
 ---
 
-- name: Configure firewalld rules
+- name: ha-node Post Install | | Configure firewalld rules
   when: use_firewalld | lower == 'true'
   block:
-    - name: Set firewalld rules (cluster)
+    - name: ha-node Post Install | | Set firewalld rules (cluster)
       with_items: "{{ openstack_ha_firewalld_ports_cluster }}"
       notify: reload firewalld
       firewalld:
@@ -11,7 +11,7 @@
         permanent: true
         state: enabled
 
-    - name: Set firewalld rules (consul)
+    - name: ha-node Post Install | | Set firewalld rules (consul)
       with_items: "{{ openstack_ha_firewalld_ports_consul }}"
       when: configure_consul | lower == 'true'
       notify: reload firewalld
@@ -20,26 +20,26 @@
         permanent: true
         state: enabled
 
-- name: Check cluster health
+- name: ha-node Post Install | | Check cluster health
   command: crm_mon -s
 
-- name: Create resources (pcs)
+- name: ha-node Post Install | | Create resources (pcs)
   when: ansible_os_family | lower == 'redhat'
   run_once: true
   block:
-    - name: Get configuration
+    - name: ha-node Post Install | | Get configuration
       command: pcs config
       register: pcs_config
 
-    - name: Disable stonith
+    - name: ha-node Post Install | | Disable stonith
       command: crm_attribute --attr-name stonith-enabled --attr-value false
       when: pcs_config.stdout.find('stonith-enabled\w+false') < 0
 
-    - name: Get configuration
+    - name: ha-node Post Install | | Get configuration
       command: pcs config
       register: pcs_config
 
-    - name: Adds cloud-info resource
+    - name: ha-node Post Install | | Adds cloud-info resource
       when: pcs_config.stdout.find('cloud-info') < 0
       command: >
         pcs resource create \
@@ -48,21 +48,21 @@
             op monitor interval=10min timeout=2min \
             op start timeout=2min
 
-    - name: Get configuration
+    - name: ha-node Post Install | | Get configuration
       command: pcs config
       register: pcs_config
 
-    - name: Clones cloud-info
+    - name: ha-node Post Install | | Clones cloud-info
       when: pcs_config.stdout.find('cloud-info-clone') < 0
       command: pcs resource clone cloud-info interleave=true
 
     - when: openstack_ha_node_use_consul | lower == 'true'
       block:
-        - name: Get configuration
+        - name: ha-node Post Install | | Get configuration
           command: pcs config
           register: pcs_config
 
-        - name: Adds consul-service resource
+        - name: ha-node Post Install | | Adds consul-service resource
           when: pcs_config.stdout.find('consul-service') < 0
           command: >
             pcs resource create \
@@ -70,11 +70,11 @@
                 op monitor interval=1min \
                 clone interleave=true
 
-        - name: Get configuration
+        - name: ha-node Post Install | | Get configuration
           command: pcs config
           register: pcs_config
 
-        - name: Adds consul-info resource
+        - name: ha-node Post Install | | Adds consul-info resource
           when: pcs_config.stdout.find('consul-info') < 0
           command: >
             pcs resource create \
@@ -82,15 +82,15 @@
                 op monitor interval=1min \
                 clone interleave=true
 
-        - name: Get configuration
+        - name: ha-node Post Install | | Get configuration
           command: pcs config
           register: pcs_config
 
-        - name: Starting order for consul
+        - name: ha-node Post Install | | Starting order for consul
           when: pcs_config.stdout.find('start consul-service-clone then start consul-info-clone') < 0
           command: pcs constraint order consul-service-clone then consul-info-clone
 
-        - name: Cleanup services if not running on the node
+        - name: ha-node Post Install | | Cleanup services if not running on the node
           with_items:
             - consul-service
             - cloud-info
@@ -98,15 +98,15 @@
             crm_resource --locate --resource {{ item }} | grep -q {{ crm_node }} \
                 || pcs resource cleanup {{ item }} --node {{ crm_node }}
 
-- name: Create resources (crm)
+- name: ha-node Post Install | | Create resources (crm)
   when: ansible_os_family | lower == 'debian'
   block:
-    - name: Disable stonith
+    - name: ha-node Post Install | | Disable stonith
       when: configure_openstack_stonith | lower == 'false'
       run_once: true
       command: crm_attribute --attr-name stonith-enabled --attr-value false
 
-    - name: Creates crm script (directory)
+    - name: ha-node Post Install | | Creates crm script (directory)
       file:
         path: "{{ openstack_ha_node_crm_scripts_root_path }}/openstack_ha_node"
         state: directory
@@ -114,12 +114,12 @@
         owner: root
         group: root
 
-    - name: Creates crm script (file)
+    - name: ha-node Post Install | | Creates crm script (file)
       template:
         src: script.yml.j2
         dest: "{{ openstack_ha_node_crm_scripts_root_path }}/openstack_ha_node/main.yml"
 
-    - name: Create the resources
+    - name: ha-node Post Install | | Create the resources
       run_once: true
       command: crm -w script run openstack_ha_node
       register: crm_script
@@ -129,7 +129,7 @@
 
     - when: configure_openstack_stonith | lower == 'true'
       block:
-        - name: Create the stonith resource
+        - name: ha-node Post Install | | Create the stonith resource
           register: crm_script
           until: crm_script is success
           retries: 5
@@ -143,9 +143,9 @@
                 password="{{ openstack_ha_node_openstack_credentials.password }}" \
                 project_name="'{{ openstack_ha_node_openstack_credentials.project_name }}'"
 
-        - name: Enable stonith
+        - name: ha-node Post Install | | Enable stonith
           run_once: true
           command: crm_attribute --attr-name stonith-enabled --attr-value true
 
-- name: Start cluster at boot
+- name: ha-node Post Install | | Start cluster at boot
   service: name=pacemaker enabled=yes

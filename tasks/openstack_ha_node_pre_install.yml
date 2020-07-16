@@ -5,9 +5,9 @@
     configure_consul: false
     configure_openstack_stonith: false
 
-- name: Firewalld
+- name: ha-node Pre Install | | Firewalld
   block:
-    - name: Check firewalld
+    - name: ha-node Pre Install | | Check firewalld
       shell: systemctl is-active firewalld.service 2>/dev/null 1>/dev/null; echo $?
       register: firewalld_service
 
@@ -17,13 +17,13 @@
 
 - when: openstack_ha_node_use_consul | lower == 'true'
   block:
-    - name: Check consul service
+    - name: ha-node Pre Install | | Check consul service
       shell: systemctl is-active consul 2>/dev/null || echo ko && exit 0
       register: consul_service
 
     - when: consul_service.stdout.find('ko') < 0
       block:
-        - name: Get consul path from systemd
+        - name: ha-node Pre Install | | Get consul path from systemd
           shell: systemctl show -p ExecStart consul|tr ' ' '\n'|awk -F= '/path=/ {print $2}'
           register: consul_bin_path
 
@@ -33,7 +33,7 @@
 
 - when: openstack_ha_node_use_openstack_stonith | lower == 'true'
   block:
-    - name: Check stonith command
+    - name: ha-node Pre Install | | Check stonith command
       command: stonith_admin -I
       register: stonith_list
 
@@ -49,7 +49,7 @@
     - set_fact:
         cluster_node_crm_node: "{{ result_crm_node.stdout }}"
 
-    - name: Get openstack_id crm_attribute
+    - name: ha-node Pre Install | | Get openstack_id crm_attribute
       register: cluster_node_uuid
       command: >
         openstack server show -f value -c id {{ ansible_hostname }}
@@ -60,5 +60,5 @@
     - when: cluster_node_openstack_id | length != 36
       fail: msg="Bad cluster_node_openstack_id {{ cluster_node_openstack_id }}"
 
-- name: Creates /etc/pacemaker
+- name: ha-node Pre Install | | Creates /etc/pacemaker
   file: path=/etc/pacemaker state=directory
