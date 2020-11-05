@@ -5,31 +5,20 @@
     configure_consul: false
     configure_openstack_stonith: false
 
+- name: Pre-Install | Check running services
+  service_facts:
+
 - name: ha-node Pre Install | Firewalld
-  block:
-    - name: ha-node Pre Install | Check firewalld
-      shell: systemctl is-active firewalld.service 2>/dev/null 1>/dev/null; echo $?
-      register: firewalld_service
+  when:
+  - ansible_facts.services | map('quote') | join(',') | regex_search('firewalld')
+  set_fact:
+    use_firewalld: true
 
-    - set_fact:
-        use_firewalld: true
-      when: firewalld_service.stdout.find('0') > -1
-
-- when: openstack_ha_node_use_consul | lower == 'true'
-  block:
-    - name: ha-node Pre Install | Check consul service
-      shell: systemctl is-active consul 2>/dev/null || echo ko && exit 0
-      register: consul_service
-
-    - when: consul_service.stdout.find('ko') < 0
-      block:
-        - name: ha-node Pre Install | Get consul path from systemd
-          shell: systemctl show -p ExecStart consul|tr ' ' '\n'|awk -F= '/path=/ {print $2}'
-          register: consul_bin_path
-
-        - set_fact:
-            consul_bin: "{{ consul_bin_path.stdout }}"
-            configure_consul: true
+- when:
+  - openstack_ha_node_use_consul | lower == 'true'
+  - ansible_facts.services | map('quote') | join(',') | regex_search('consul')
+  set_fact:
+    configure_consul: true
 
 - when: openstack_ha_node_use_openstack_stonith | lower == 'true'
   block:
